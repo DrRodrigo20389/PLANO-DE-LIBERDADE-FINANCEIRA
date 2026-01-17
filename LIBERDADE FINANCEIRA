@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IMPACTO BRUTO - CONTROLE TOTAL 🦁</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #050505; --card: #111111; --accent: #00ff88; --text: #e0e0e0; 
+            --danger: #ff4444; --border: #222222; --gold: #ffd700; --quantum: #00d4ff; --warning: #ffaa00;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 10px; max-width: 420px; margin: 0 auto; }
+        .card { background: var(--card); border: 1px solid var(--border); padding: 12px; border-radius: 10px; margin-bottom: 8px; }
+        .label { color: #666; font-size: 9px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .val-gold { color: var(--gold); font-size: 22px; font-weight: bold; }
+        .val-quantum { color: var(--quantum); font-size: 18px; font-weight: bold; }
+        .chart-container { height: 180px; margin: 5px 0; }
+        .input-group { display: flex; gap: 5px; margin-top: 8px; align-items: center; }
+        input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 6px; font-size: 13px; outline: none; }
+        .btn { border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; width: 100%; margin-top: 5px; }
+        .btn-accent { background: var(--accent); color: #000; }
+        .impact-panel { background: rgba(255, 170, 0, 0.1); border: 1px solid var(--warning); padding: 10px; margin-top: 8px; border-radius: 8px; display: none; font-size: 11px; color: var(--warning); text-align: center; }
+        .logs { margin-top: 15px; max-height: 200px; overflow-y: auto; font-size: 11px; }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
+        .btn-del { color: #555; cursor: pointer; padding: 5px; font-size: 14px; font-weight: bold; transition: 0.2s; }
+        .btn-del:hover { color: var(--danger); }
+        .sync-zone { display: flex; gap: 5px; margin-top: 15px; border-top: 1px dashed #333; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <span class="label">Patrimônio Líquido Acumulado</span>
+        <div class="val-gold" id="totalGeral">R$ 0,00</div>
+        <div class="chart-container"><canvas id="meuGrafico"></canvas></div>
+    </div>
+
+    <div class="card" style="border-color: var(--quantum);">
+        <span class="label" style="color: var(--quantum);">Analista Quântico (Projeção de Fecho)</span>
+        <div style="display:flex; justify-content: space-between; margin: 5px 0;">
+            <span style="font-size:11px;">Alvo Final (31/01):</span>
+            <span class="val-quantum" id="projecaoFinal">R$ 0,00</span>
+        </div>
+        <div id="infoDias" style="font-size: 9px; color: #888; border-top: 1px solid #222; padding-top: 5px;"></div>
+    </div>
+
+    <div class="card" style="border-color: var(--warning);">
+        <span class="label" style="color: var(--warning);">Simular ou Lançar Saída</span>
+        <div class="input-group">
+            <input type="number" id="extraInput" placeholder="Valor R$" inputmode="decimal" oninput="render()">
+            <input type="date" id="dataGasto">
+        </div>
+        <div id="painelImpacto" class="impact-panel"></div>
+        <button id="btnLancarGasto" class="btn" style="background:var(--danger); color:white; display:none;" onclick="lancarGasto()">CONFIRMAR SAÍDA</button>
+    </div>
+
+    <div class="card">
+        <span class="label">Lançar Turno</span>
+        <div class="input-group">
+            <input type="number" id="valorBruto" placeholder="Bruto R$" inputmode="decimal">
+            <input type="date" id="dataTurno">
+            <button class="btn btn-accent" style="width:50px; margin:0;" onclick="lancar()">OK</button>
+        </div>
+    </div>
+
+    <div class="logs" id="historico"></div>
+
+    <div class="sync-zone">
+        <button class="btn" style="background:#222; color:#00ff88;" onclick="exportarJSON()">💾 Exportar</button>
+        <button class="btn" style="background:#222; color:#0077ff;" onclick="document.getElementById('fileInput').click()">📂 Importar</button>
+        <input type="file" id="fileInput" style="display:none" onchange="importarJSON(event)">
+    </div>
+
+    <script>
+        const FERIADOS_STOP = ["2026-01-01", "2026-02-16", "2026-02-17", "2026-04-03", "2026-04-21", "2026-05-01", "2026-06-24", "2026-07-02", "2026-09-07", "2026-10-12", "2026-11-02", "2026-11-15", "2026-12-25"];
+
+        let db = JSON.parse(localStorage.getItem('blindagem_quantum_final_v18')) || {
+            tesouroTotal: 0, 
+            logsMes: [{"id":1,"tipo":"rec","valor":188.37,"label":"USG: R$ 1449","data":"2026-01-05"},{"id":2,"tipo":"rec","valor":216.45,"label":"USG: R$ 1665","data":"2026-01-05"},{"id":3,"tipo":"rec","valor":9.24,"label":"USG: R$ 154","data":"2026-01-06"},{"id":4,"tipo":"rec","valor":176.36,"label":"USG: R$ 1356.6","data":"2026-01-06"},{"id":5,"tipo":"rec","valor":365.17,"label":"USG: R$ 2809","data":"2026-01-07"},{"id":6,"tipo":"rec","valor":141.96,"label":"USG: R$ 1092","data":"2026-01-08"},{"id":7,"tipo":"rec","valor":9.24,"label":"USG: R$ 154","data":"2026-01-08"},{"id":8,"tipo":"rec","valor":252.2,"label":"USG: R$ 1940","data":"2026-01-10"},{"id":9,"tipo":"rec","valor":252.98,"label":"USG: R$ 1946","data":"2026-01-12"},{"id":10,"tipo":"rec","valor":222.3,"label":"USG: R$ 1710","data":"2026-01-12"},{"id":11,"tipo":"rec","valor":52.08,"label":"USG: R$ 868","data":"2026-01-12"},{"id":12,"tipo":"rec","valor":27.72,"label":"USG: R$ 462","data":"2026-01-13"},{"id":13,"tipo":"rec","valor":747.5,"label":"USG: R$ 3737.5","data":"2026-01-14"},{"id":14,"tipo":"rec","valor":194.74,"label":"USG: R$ 1498","data":"2026-01-15"},{"id":15,"tipo":"rec","valor":235.04,"label":"USG: R$ 1808","data":"2026-01-15"},{"id":16,"tipo":"rec","valor":176.36,"label":"USG: R$ 1356.6","data":"2026-01-16"},{"id":17,"tipo":"rec","valor":143.52,"label":"USG: R$ 1104","data":"2026-01-17"}], 
+            historicoLogs: [] 
+        };
+
+        let meuChart;
+
+        function save() { localStorage.setItem('blindagem_quantum_final_v18', JSON.stringify(db)); render(); }
+
+        function lancar() {
+            const b = parseFloat(document.getElementById('valorBruto').value);
+            if (!b) return;
+            let t = b > 3000 ? 0.20 : (b > 1000 ? 0.13 : 0.06);
+            db.logsMes.push({ id: Date.now(), tipo: 'rec', valor: b * t, label: `USG: R$ ${b}`, data: document.getElementById('dataTurno').value });
+            document.getElementById('valorBruto').value = ''; save();
+        }
+
+        function lancarGasto() {
+            const v = parseFloat(document.getElementById('extraInput').value);
+            if (!v) return;
+            db.logsMes.push({ id: Date.now(), tipo: 'gasto', valor: -v, label: `SAÍDA`, data: document.getElementById('dataGasto').value });
+            document.getElementById('extraInput').value = ''; save();
+        }
+
+        function apagarItem(id) {
+            if(confirm("Remover este lançamento?")) {
+                db.logsMes = db.logsMes.filter(l => l.id !== id);
+                save();
+            }
+        }
+
+        function render() {
+            const blindado = db.logsMes.filter(l => l.valor > 0).reduce((s, l) => s + l.valor, 0);
+            const gastosReais = db.logsMes.filter(l => l.valor < 0).reduce((s, l) => s + l.valor, 0);
+            const totalAgora = db.tesouroTotal + blindado + gastosReais;
+            const simSaida = parseFloat(document.getElementById('extraInput').value) || 0;
+            
+            const nTurnos = db.logsMes.filter(l => l.tipo === 'rec').length;
+            const media = nTurnos > 0 ? (blindado / nTurnos) : 123;
+
+            const hoje = new Date();
+            const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+            let tRestantes = 0; let diasT = 0;
+            for (let d = hoje.getDate() + 1; d <= fimMes; d++) {
+                let dataCheck = new Date(hoje.getFullYear(), hoje.getMonth(), d);
+                if (!FERIADOS_STOP.includes(dataCheck.toISOString().split('T')[0])) {
+                    let s = dataCheck.getDay();
+                    if (s >= 1 && s <= 5) { tRestantes += 2; diasT++; }
+                    else if (s === 6) { tRestantes += 1; diasT++; }
+                }
+            }
+
+            const estFinal = totalAgora + (tRestantes * media) - simSaida;
+            document.getElementById('totalGeral').innerText = totalAgora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('projecaoFinal').innerText = estFinal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('infoDias').innerHTML = `Faltam <b>${diasT} dias</b> úteis (${tRestantes} turnos). Média: <b>R$ ${media.toFixed(2)}</b>`;
+
+            if (simSaida > 0) {
+                document.getElementById('painelImpacto').style.display = 'block';
+                document.getElementById('btnLancarGasto').style.display = 'block';
+                document.getElementById('painelImpacto').innerHTML = `⚠️ Essa saída custa <b>${(simSaida / media).toFixed(1)} TURNOS</b>.`;
+            } else {
+                document.getElementById('painelImpacto').style.display = 'none';
+                document.getElementById('btnLancarGasto').style.display = 'none';
+            }
+
+            document.getElementById('historico').innerHTML = db.logsMes.slice().reverse().map(l => `
+                <div class="item">
+                    <span>${l.data.split('-').reverse().slice(0,2).join('/')} - ${l.label}</span>
+                    <div style="display:flex; align-items:center;">
+                        <b style="color:${l.valor > 0 ? 'var(--accent)' : 'var(--danger)'}">${l.valor.toFixed(2)}</b>
+                        <span class="btn-del" onclick="apagarItem(${l.id})">✕</span>
+                    </div>
+                </div>
+            `).join('');
+
+            updateChart(totalAgora, media, simSaida);
+        }
+
+        function updateChart(totalReal, mediaB, simSaida) {
+            let labels = []; let dReal = []; let dProj = [];
+            let ac = db.tesouroTotal;
+            const logs = [...db.historicoLogs, ...db.logsMes].sort((a,b) => new Date(a.data) - new Date(b.data));
+            logs.forEach(l => { ac += l.valor; labels.push(l.data.split('-')[2]); dReal.push(ac); dProj.push(null); });
+
+            const hoje = new Date();
+            const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+            let acProj = ac - simSaida;
+            dProj[dProj.length - 1] = ac;
+
+            for (let d = hoje.getDate() + 1; d <= fimMes; d++) {
+                let dataP = new Date(hoje.getFullYear(), hoje.getMonth(), d);
+                let tDia = 0;
+                if (!FERIADOS_STOP.includes(dataP.toISOString().split('T')[0])) {
+                    let s = dataP.getDay();
+                    tDia = (s >= 1 && s <= 5) ? 2 : (s === 6 ? 1 : 0);
+                }
+                acProj += (tDia * mediaB);
+                labels.push(d.toString()); dReal.push(null); dProj.push(acProj);
+            }
+
+            if (meuChart) meuChart.destroy();
+            meuChart = new Chart(document.getElementById('meuGrafico'), {
+                type: 'line',
+                data: { labels, datasets: [
+                    { data: dReal, borderColor: '#00ff88', tension: 0.3, fill: true, backgroundColor: 'rgba(0, 255, 136, 0.1)', pointRadius: 2 },
+                    { data: dProj, borderColor: '#00d4ff', borderDash: [5, 5], tension: 0.3, pointRadius: 0 }
+                ]},
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#444', font: { size: 8 } } } } }
+            });
+        }
+
+        function exportarJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            const a = document.createElement('a'); a.href = dataStr; a.download = "backup_ultra_final.json"; a.click();
+        }
+
+        function importarJSON(e) {
+            const reader = new FileReader();
+            reader.onload = (ev) => { db = JSON.parse(ev.target.result); save(); alert("Restaurado!"); };
+            reader.readAsText(e.target.files[0]);
+        }
+
+        document.getElementById('dataTurno').value = new Date().toISOString().split('T')[0];
+        document.getElementById('dataGasto').value = new Date().toISOString().split('T')[0];
+        render();
+    </script>
+</body>
+</html>
