@@ -1,208 +1,220 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IMPACTO BRUTO - CONTROLE TOTAL 🦁</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle: Ana Clara & Alice</title>
     <style>
-        :root {
-            --bg: #050505; --card: #111111; --accent: #00ff88; --text: #e0e0e0; 
-            --danger: #ff4444; --border: #222222; --gold: #ffd700; --quantum: #00d4ff; --warning: #ffaa00;
-        }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 10px; max-width: 420px; margin: 0 auto; }
-        .card { background: var(--card); border: 1px solid var(--border); padding: 12px; border-radius: 10px; margin-bottom: 8px; }
-        .label { color: #666; font-size: 9px; text-transform: uppercase; display: block; margin-bottom: 2px; }
-        .val-gold { color: var(--gold); font-size: 22px; font-weight: bold; }
-        .val-quantum { color: var(--quantum); font-size: 18px; font-weight: bold; }
-        .chart-container { height: 180px; margin: 5px 0; }
-        .input-group { display: flex; gap: 5px; margin-top: 8px; align-items: center; }
-        input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 6px; font-size: 13px; outline: none; }
-        .btn { border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; width: 100%; margin-top: 5px; }
-        .btn-accent { background: var(--accent); color: #000; }
-        .impact-panel { background: rgba(255, 170, 0, 0.1); border: 1px solid var(--warning); padding: 10px; margin-top: 8px; border-radius: 8px; display: none; font-size: 11px; color: var(--warning); text-align: center; }
-        .logs { margin-top: 15px; max-height: 200px; overflow-y: auto; font-size: 11px; }
-        .item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
-        .btn-del { color: #555; cursor: pointer; padding: 5px; font-size: 14px; font-weight: bold; transition: 0.2s; }
-        .btn-del:hover { color: var(--danger); }
-        .sync-zone { display: flex; gap: 5px; margin-top: 15px; border-top: 1px dashed #333; padding-top: 10px; }
+        :root { --poup: #8a05be; --gasto: #2f855a; --bonus: #d69e2e; --extra-color: #f6ad55; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 10px; margin: 0; }
+        .app-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        
+        .user-selector { display: flex; gap: 10px; margin-bottom: 20px; }
+        .user-btn { flex: 1; padding: 10px; border-radius: 12px; border: 2px solid #e2e8f0; cursor: pointer; font-weight: bold; background: #fff; }
+        .user-btn.active.ana { border-color: #d53f8c; background: #fff5f7; color: #d53f8c; }
+        .user-btn.active.alice { border-color: #3182ce; background: #ebf8ff; color: #3182ce; }
+
+        .dia-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+        .btn-dia { flex-grow: 2; background: #edf2f7; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; font-weight: 600; font-size: 0.85em; }
+        .btn-dia.checked { background: #c6f6d5; border-color: #48bb78; color: #22543d; }
+        .btn-extra { flex-grow: 1; background: #feebc8; border: 1px solid var(--extra-color); padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.7em; color: #7b341e; text-align: center; }
+        .btn-extra.active { background: var(--extra-color); color: white; }
+
+        .painel-valores { margin-top: 15px; display: grid; gap: 12px; }
+        .caixa { padding: 15px; border-radius: 15px; color: white; }
+        .caixa h4 { margin: 0 0 5px 0; font-size: 0.75em; text-transform: uppercase; opacity: 0.9; }
+        .caixa .valor { font-size: 1.6em; font-weight: bold; display: block; }
+        
+        .c-poup { background: var(--poup); border-bottom: 4px solid #4a148c; }
+        .c-gasto { background: var(--gasto); border-bottom: 4px solid #1c5d3e; }
+        .c-bonus { background: var(--bonus); border-bottom: 4px solid #b08123; }
+
+        .btn-acao { background: rgba(255,255,255,0.25); border: 1.5px solid white; color: white; border-radius: 10px; cursor: pointer; padding: 10px; font-size: 0.85em; font-weight: 800; width: 100%; margin-top: 8px; }
+        
+        .extrato { margin-top: 20px; background: #f8fafc; border-radius: 12px; padding: 10px; max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; }
+        .extrato h5 { margin: 0 0 10px 0; font-size: 0.8em; color: #64748b; text-transform: uppercase; }
+        .item-extrato { display: flex; justify-content: space-between; align-items: center; font-size: 0.75em; padding: 6px 0; border-bottom: 1px solid #edf2f7; }
+        .btn-del { color: #ef4444; border: none; background: none; cursor: pointer; font-weight: bold; padding: 0 5px; }
+
+        .btn-main { padding: 15px; border-radius: 10px; border: none; background: #1a202c; color: white; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; }
+        
+        .btn-reset-discreto { margin-top: 30px; text-align: center; }
+        .btn-reset-discreto button { background: none; border: none; color: #cbd5e0; font-size: 0.6em; cursor: pointer; text-decoration: none; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <span class="label">Patrimônio Líquido Acumulado</span>
-        <div class="val-gold" id="totalGeral">R$ 0,00</div>
-        <div class="chart-container"><canvas id="meuGrafico"></canvas></div>
+<div class="app-card">
+    <div class="user-selector">
+        <button id="btn-ana" class="user-btn ana" onclick="setUser('ana')">Ana Clara</button>
+        <button id="btn-alice" class="user-btn alice" onclick="setUser('alice')">Alice</button>
     </div>
 
-    <div class="card" style="border-color: var(--quantum);">
-        <span class="label" style="color: var(--quantum);">Analista Quântico (Projeção de Fecho)</span>
-        <div style="display:flex; justify-content: space-between; margin: 5px 0;">
-            <span style="font-size:11px;">Alvo Final (31/01):</span>
-            <span class="val-quantum" id="projecaoFinal">R$ 0,00</span>
+    <div id="container-dias"></div>
+
+    <div class="painel-valores">
+        <div class="caixa c-poup">
+            <h4>🏦 CAIXINHA NUBANK 🔒</h4>
+            <span class="valor" id="v-poup">R$ 0,00</span>
         </div>
-        <div id="infoDias" style="font-size: 9px; color: #888; border-top: 1px solid #222; padding-top: 5px;"></div>
-    </div>
-
-    <div class="card" style="border-color: var(--warning);">
-        <span class="label" style="color: var(--warning);">Simular ou Lançar Saída</span>
-        <div class="input-group">
-            <input type="number" id="extraInput" placeholder="Valor R$" inputmode="decimal" oninput="render()">
-            <input type="date" id="dataGasto">
+        <div class="caixa c-gasto">
+            <h4>🍦 GASTO SEMANAL</h4>
+            <span class="valor" id="v-gasto">R$ 0,00</span>
+            <button class="btn-acao" onclick="registrarGasto('gasto')">💸 REGISTRAR GASTO</button>
         </div>
-        <div id="painelImpacto" class="impact-panel"></div>
-        <button id="btnLancarGasto" class="btn" style="background:var(--danger); color:white; display:none;" onclick="lancarGasto()">CONFIRMAR SAÍDA</button>
-    </div>
-
-    <div class="card">
-        <span class="label">Lançar Turno</span>
-        <div class="input-group">
-            <input type="number" id="valorBruto" placeholder="Bruto R$" inputmode="decimal">
-            <input type="date" id="dataTurno">
-            <button class="btn btn-accent" style="width:50px; margin:0;" onclick="lancar()">OK</button>
+        <div class="caixa c-bonus">
+            <h4>🎒 BÔNUS (SONHOS)</h4>
+            <span class="valor" id="v-bonus">R$ 0,00</span>
+            <button class="btn-acao" onclick="registrarGasto('bonus')">🎁 USAR BÔNUS</button>
         </div>
     </div>
 
-    <div class="logs" id="historico"></div>
-
-    <div class="sync-zone">
-        <button class="btn" style="background:#222; color:#00ff88;" onclick="exportarJSON()">💾 Exportar</button>
-        <button class="btn" style="background:#222; color:#0077ff;" onclick="document.getElementById('fileInput').click()">📂 Importar</button>
-        <input type="file" id="fileInput" style="display:none" onchange="importarJSON(event)">
+    <div class="extrato">
+        <h5>📜 Histórico (Exclua para corrigir)</h5>
+        <div id="lista-extrato"></div>
     </div>
 
-    <script>
-        const FERIADOS_STOP = ["2026-01-01", "2026-02-16", "2026-02-17", "2026-04-03", "2026-04-21", "2026-05-01", "2026-06-24", "2026-07-02", "2026-09-07", "2026-10-12", "2026-11-02", "2026-11-15", "2026-12-25"];
+    <button class="btn-main" onclick="concluirSemana()">CONCLUIR SEMANA</button>
 
-        let db = JSON.parse(localStorage.getItem('blindagem_quantum_final_v18')) || {
-            tesouroTotal: 0, 
-            logsMes: [{"id":1,"tipo":"rec","valor":188.37,"label":"USG: R$ 1449","data":"2026-01-05"},{"id":2,"tipo":"rec","valor":216.45,"label":"USG: R$ 1665","data":"2026-01-05"},{"id":3,"tipo":"rec","valor":9.24,"label":"USG: R$ 154","data":"2026-01-06"},{"id":4,"tipo":"rec","valor":176.36,"label":"USG: R$ 1356.6","data":"2026-01-06"},{"id":5,"tipo":"rec","valor":365.17,"label":"USG: R$ 2809","data":"2026-01-07"},{"id":6,"tipo":"rec","valor":141.96,"label":"USG: R$ 1092","data":"2026-01-08"},{"id":7,"tipo":"rec","valor":9.24,"label":"USG: R$ 154","data":"2026-01-08"},{"id":8,"tipo":"rec","valor":252.2,"label":"USG: R$ 1940","data":"2026-01-10"},{"id":9,"tipo":"rec","valor":252.98,"label":"USG: R$ 1946","data":"2026-01-12"},{"id":10,"tipo":"rec","valor":222.3,"label":"USG: R$ 1710","data":"2026-01-12"},{"id":11,"tipo":"rec","valor":52.08,"label":"USG: R$ 868","data":"2026-01-12"},{"id":12,"tipo":"rec","valor":27.72,"label":"USG: R$ 462","data":"2026-01-13"},{"id":13,"tipo":"rec","valor":747.5,"label":"USG: R$ 3737.5","data":"2026-01-14"},{"id":14,"tipo":"rec","valor":194.74,"label":"USG: R$ 1498","data":"2026-01-15"},{"id":15,"tipo":"rec","valor":235.04,"label":"USG: R$ 1808","data":"2026-01-15"},{"id":16,"tipo":"rec","valor":176.36,"label":"USG: R$ 1356.6","data":"2026-01-16"},{"id":17,"tipo":"rec","valor":143.52,"label":"USG: R$ 1104","data":"2026-01-17"}], 
-            historicoLogs: [] 
-        };
+    <div class="btn-reset-discreto">
+        <button onclick="resetAbsoluto()">Sincronizar e zerar banco de dados</button>
+    </div>
+</div>
 
-        let meuChart;
+<script>
+    // Recupera o último usuário ou inicia com Ana
+    let currentUser = localStorage.getItem('ultimoUsuario') || 'ana';
+    
+    // Banco de dados persistente
+    let dataStore = JSON.parse(localStorage.getItem('financas_irmas_final_v5')) || {
+        ana: { saldoAcumulado: 0, extrato: [], diasAtivos: {} },
+        alice: { saldoAcumulado: 0, extrato: [], diasAtivos: {} }
+    };
 
-        function save() { localStorage.setItem('blindagem_quantum_final_v18', JSON.stringify(db)); render(); }
+    const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
 
-        function lancar() {
-            const b = parseFloat(document.getElementById('valorBruto').value);
-            if (!b) return;
-            let t = b > 3000 ? 0.20 : (b > 1000 ? 0.13 : 0.06);
-            db.logsMes.push({ id: Date.now(), tipo: 'rec', valor: b * t, label: `USG: R$ ${b}`, data: document.getElementById('dataTurno').value });
-            document.getElementById('valorBruto').value = ''; save();
-        }
-
-        function lancarGasto() {
-            const v = parseFloat(document.getElementById('extraInput').value);
-            if (!v) return;
-            db.logsMes.push({ id: Date.now(), tipo: 'gasto', valor: -v, label: `SAÍDA`, data: document.getElementById('dataGasto').value });
-            document.getElementById('extraInput').value = ''; save();
-        }
-
-        function apagarItem(id) {
-            if(confirm("Remover este lançamento?")) {
-                db.logsMes = db.logsMes.filter(l => l.id !== id);
-                save();
-            }
-        }
-
-        function render() {
-            const blindado = db.logsMes.filter(l => l.valor > 0).reduce((s, l) => s + l.valor, 0);
-            const gastosReais = db.logsMes.filter(l => l.valor < 0).reduce((s, l) => s + l.valor, 0);
-            const totalAgora = db.tesouroTotal + blindado + gastosReais;
-            const simSaida = parseFloat(document.getElementById('extraInput').value) || 0;
-            
-            const nTurnos = db.logsMes.filter(l => l.tipo === 'rec').length;
-            const media = nTurnos > 0 ? (blindado / nTurnos) : 123;
-
-            const hoje = new Date();
-            const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
-            let tRestantes = 0; let diasT = 0;
-            for (let d = hoje.getDate() + 1; d <= fimMes; d++) {
-                let dataCheck = new Date(hoje.getFullYear(), hoje.getMonth(), d);
-                if (!FERIADOS_STOP.includes(dataCheck.toISOString().split('T')[0])) {
-                    let s = dataCheck.getDay();
-                    if (s >= 1 && s <= 5) { tRestantes += 2; diasT++; }
-                    else if (s === 6) { tRestantes += 1; diasT++; }
-                }
-            }
-
-            const estFinal = totalAgora + (tRestantes * media) - simSaida;
-            document.getElementById('totalGeral').innerText = totalAgora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById('projecaoFinal').innerText = estFinal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById('infoDias').innerHTML = `Faltam <b>${diasT} dias</b> úteis (${tRestantes} turnos). Média: <b>R$ ${media.toFixed(2)}</b>`;
-
-            if (simSaida > 0) {
-                document.getElementById('painelImpacto').style.display = 'block';
-                document.getElementById('btnLancarGasto').style.display = 'block';
-                document.getElementById('painelImpacto').innerHTML = `⚠️ Essa saída custa <b>${(simSaida / media).toFixed(1)} TURNOS</b>.`;
-            } else {
-                document.getElementById('painelImpacto').style.display = 'none';
-                document.getElementById('btnLancarGasto').style.display = 'none';
-            }
-
-            document.getElementById('historico').innerHTML = db.logsMes.slice().reverse().map(l => `
-                <div class="item">
-                    <span>${l.data.split('-').reverse().slice(0,2).join('/')} - ${l.label}</span>
-                    <div style="display:flex; align-items:center;">
-                        <b style="color:${l.valor > 0 ? 'var(--accent)' : 'var(--danger)'}">${l.valor.toFixed(2)}</b>
-                        <span class="btn-del" onclick="apagarItem(${l.id})">✕</span>
-                    </div>
-                </div>
-            `).join('');
-
-            updateChart(totalAgora, media, simSaida);
-        }
-
-        function updateChart(totalReal, mediaB, simSaida) {
-            let labels = []; let dReal = []; let dProj = [];
-            let ac = db.tesouroTotal;
-            const logs = [...db.historicoLogs, ...db.logsMes].sort((a,b) => new Date(a.data) - new Date(b.data));
-            logs.forEach(l => { ac += l.valor; labels.push(l.data.split('-')[2]); dReal.push(ac); dProj.push(null); });
-
-            const hoje = new Date();
-            const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
-            let acProj = ac - simSaida;
-            dProj[dProj.length - 1] = ac;
-
-            for (let d = hoje.getDate() + 1; d <= fimMes; d++) {
-                let dataP = new Date(hoje.getFullYear(), hoje.getMonth(), d);
-                let tDia = 0;
-                if (!FERIADOS_STOP.includes(dataP.toISOString().split('T')[0])) {
-                    let s = dataP.getDay();
-                    tDia = (s >= 1 && s <= 5) ? 2 : (s === 6 ? 1 : 0);
-                }
-                acProj += (tDia * mediaB);
-                labels.push(d.toString()); dReal.push(null); dProj.push(acProj);
-            }
-
-            if (meuChart) meuChart.destroy();
-            meuChart = new Chart(document.getElementById('meuGrafico'), {
-                type: 'line',
-                data: { labels, datasets: [
-                    { data: dReal, borderColor: '#00ff88', tension: 0.3, fill: true, backgroundColor: 'rgba(0, 255, 136, 0.1)', pointRadius: 2 },
-                    { data: dProj, borderColor: '#00d4ff', borderDash: [5, 5], tension: 0.3, pointRadius: 0 }
-                ]},
-                options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#444', font: { size: 8 } } } } }
-            });
-        }
-
-        function exportarJSON() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-            const a = document.createElement('a'); a.href = dataStr; a.download = "backup_ultra_final.json"; a.click();
-        }
-
-        function importarJSON(e) {
-            const reader = new FileReader();
-            reader.onload = (ev) => { db = JSON.parse(ev.target.result); save(); alert("Restaurado!"); };
-            reader.readAsText(e.target.files[0]);
-        }
-
-        document.getElementById('dataTurno').value = new Date().toISOString().split('T')[0];
-        document.getElementById('dataGasto').value = new Date().toISOString().split('T')[0];
+    function setUser(user) {
+        currentUser = user;
+        localStorage.setItem('ultimoUsuario', user);
+        document.getElementById('btn-ana').classList.toggle('active', user === 'ana');
+        document.getElementById('btn-alice').classList.toggle('active', user === 'alice');
         render();
-    </script>
+    }
+
+    function render() {
+        const container = document.getElementById('container-dias');
+        container.innerHTML = '';
+        let state = dataStore[currentUser];
+        
+        diasSemana.forEach(nome => {
+            if(!state.diasAtivos[nome]) state.diasAtivos[nome] = {base: false, extra: false};
+            let row = document.createElement('div');
+            row.className = 'dia-row';
+            row.innerHTML = `
+                <button class="btn-dia ${state.diasAtivos[nome].base ? 'checked' : ''}" onclick="toggleDia('${nome}', 'base')">
+                    ${nome} <span>R$ 15</span>
+                </button>
+                <button class="btn-extra ${state.diasAtivos[nome].extra ? 'active' : ''}" onclick="toggleDia('${nome}', 'extra')">
+                    + R$ 15 EXTRA
+                </button>`;
+            container.appendChild(row);
+        });
+        atualizarCalculos();
+    }
+
+    function toggleDia(nome, tipo) {
+        dataStore[currentUser].diasAtivos[nome][tipo] = !dataStore[currentUser].diasAtivos[nome][tipo];
+        save(); atualizarCalculos(); render();
+    }
+
+    function registrarGasto(tipo) {
+        let vStr = prompt(`Quanto você gastou, ${currentUser === 'ana' ? 'Ana' : 'Alice'}?`);
+        if(vStr) {
+            let v = parseFloat(vStr.replace(',', '.'));
+            if(!isNaN(v)) {
+                dataStore[currentUser].extrato.unshift({
+                    id: Date.now(),
+                    tipo: tipo,
+                    valor: -v,
+                    desc: `${tipo.toUpperCase()}`,
+                    data: new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})
+                });
+                save(); atualizarCalculos();
+            }
+        }
+    }
+
+    function excluirItem(id) {
+        if(confirm("Deseja apagar este gasto e devolver o dinheiro ao saldo?")) {
+            dataStore[currentUser].extrato = dataStore[currentUser].extrato.filter(item => item.id !== id);
+            save(); atualizarCalculos();
+        }
+    }
+
+    function atualizarCalculos() {
+        let state = dataStore[currentUser];
+        let ganhoSemana = 0;
+        for(let dia in state.diasAtivos) {
+            if(state.diasAtivos[dia].base) ganhoSemana += 15;
+            if(state.diasAtivos[dia].extra) ganhoSemana += 15;
+        }
+
+        let totalPoup = (state.saldoAcumulado + ganhoSemana) / 3;
+        let resto = (state.saldoAcumulado + ganhoSemana) - totalPoup;
+        
+        let totalGasto = resto * 0.75;
+        let totalBonus = resto * 0.25;
+
+        state.extrato.forEach(item => {
+            if(item.tipo === 'gasto') totalGasto += item.valor;
+            if(item.tipo === 'bonus') totalBonus += item.valor;
+        });
+
+        document.getElementById('v-poup').innerText = format(totalPoup);
+        document.getElementById('v-gasto').innerText = format(totalGasto);
+        document.getElementById('v-bonus').innerText = format(totalBonus);
+
+        renderExtrato();
+    }
+
+    function renderExtrato() {
+        const lista = document.getElementById('lista-extrato');
+        lista.innerHTML = dataStore[currentUser].extrato.length === 0 ? '<div style="color:#ccc; font-size:0.7em">Nenhum gasto para mostrar.</div>' : '';
+        dataStore[currentUser].extrato.forEach(item => {
+            lista.innerHTML += `
+                <div class="item-extrato">
+                    <span><span style="color:#94a3b8">${item.data}</span> ${item.desc}</span>
+                    <span style="color:#ef4444">${format(item.valor)} <button class="btn-del" onclick="excluirItem(${item.id})">✕</button></span>
+                </div>`;
+        });
+    }
+
+    function concluirSemana() {
+        let state = dataStore[currentUser];
+        let ganho = 0;
+        for(let dia in state.diasAtivos) {
+            if(state.diasAtivos[dia].base) ganho += 15;
+            if(state.diasAtivos[dia].extra) ganho += 15;
+        }
+        if(confirm(`Somar R$ ${ganho} ao saldo acumulado e limpar calendário?`)) {
+            state.saldoAcumulado += ganho;
+            state.diasAtivos = {};
+            save(); render();
+        }
+    }
+
+    function format(v) { return `R$ ${v.toFixed(2).replace('.', ',')}`; }
+    function save() { localStorage.setItem('financas_irmas_final_v5', JSON.stringify(dataStore)); }
+    
+    function resetAbsoluto() {
+        if(confirm("ATENÇÃO: Isso apagará TODOS os saldos da Ana e da Alice. Tem certeza absoluta?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+    
+    // Inicia no usuário correto
+    setUser(currentUser);
+</script>
 </body>
 </html>
