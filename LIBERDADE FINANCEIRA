@@ -1,220 +1,620 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle: Ana Clara & Alice</title>
+    <title>SKYNET V58 - PERSISTÊNCIA DE CONFIGURAÇÕES</title>
+    <!-- Chart.js + Luxon Adapter para eixo temporal nativo -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
     <style>
-        :root { --poup: #8a05be; --gasto: #2f855a; --bonus: #d69e2e; --extra-color: #f6ad55; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 10px; margin: 0; }
-        .app-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        
-        .user-selector { display: flex; gap: 10px; margin-bottom: 20px; }
-        .user-btn { flex: 1; padding: 10px; border-radius: 12px; border: 2px solid #e2e8f0; cursor: pointer; font-weight: bold; background: #fff; }
-        .user-btn.active.ana { border-color: #d53f8c; background: #fff5f7; color: #d53f8c; }
-        .user-btn.active.alice { border-color: #3182ce; background: #ebf8ff; color: #3182ce; }
+        :root {
+            --bg: #000000;
+            --card: #080808;
+            --border: #222222;
+            --green: #00ff41;
+            --red: #ff3333;
+            --accent: #00ffff;
+            --yellow: #f59e0b;
+            --subtext: #888888;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background-color: var(--bg); 
+            color: #fff; 
+            font-family: 'Verdana', sans-serif; 
+            margin: 0; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            touch-action: none; 
+        }
 
-        .dia-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-        .btn-dia { flex-grow: 2; background: #edf2f7; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; font-weight: 600; font-size: 0.85em; }
-        .btn-dia.checked { background: #c6f6d5; border-color: #48bb78; color: #22543d; }
-        .btn-extra { flex-grow: 1; background: #feebc8; border: 1px solid var(--extra-color); padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.7em; color: #7b341e; text-align: center; }
-        .btn-extra.active { background: var(--extra-color); color: white; }
+        .toolbar { 
+            background: #050505; 
+            border-bottom: 2px solid #222; 
+            padding: 5px 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            height: 50px; 
+            flex-shrink: 0; 
+        }
+        .logo-title { font-size: 1.1rem; font-weight: 900; color: #fff; letter-spacing: 1px; }
+        .logo-sub { font-size: 0.65rem; color: var(--green); font-weight: 900; }
+        .live-price { font-size: 1.2rem; font-weight: bold; font-family: monospace; color: var(--green); }
 
-        .painel-valores { margin-top: 15px; display: grid; gap: 12px; }
-        .caixa { padding: 15px; border-radius: 15px; color: white; }
-        .caixa h4 { margin: 0 0 5px 0; font-size: 0.75em; text-transform: uppercase; opacity: 0.9; }
-        .caixa .valor { font-size: 1.6em; font-weight: bold; display: block; }
-        
-        .c-poup { background: var(--poup); border-bottom: 4px solid #4a148c; }
-        .c-gasto { background: var(--gasto); border-bottom: 4px solid #1c5d3e; }
-        .c-bonus { background: var(--bonus); border-bottom: 4px solid #b08123; }
+        .controls-group { display: flex; align-items: center; gap: 12px; }
 
-        .btn-acao { background: rgba(255,255,255,0.25); border: 1.5px solid white; color: white; border-radius: 10px; cursor: pointer; padding: 10px; font-size: 0.85em; font-weight: 800; width: 100%; margin-top: 8px; }
-        
-        .extrato { margin-top: 20px; background: #f8fafc; border-radius: 12px; padding: 10px; max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; }
-        .extrato h5 { margin: 0 0 10px 0; font-size: 0.8em; color: #64748b; text-transform: uppercase; }
-        .item-extrato { display: flex; justify-content: space-between; align-items: center; font-size: 0.75em; padding: 6px 0; border-bottom: 1px solid #edf2f7; }
-        .btn-del { color: #ef4444; border: none; background: none; cursor: pointer; font-weight: bold; padding: 0 5px; }
+        .input-picker-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #111;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+        .input-picker-box label { font-size: 0.68rem; color: var(--green); font-weight: bold; }
+        .input-picker-box input { 
+            background: #000; 
+            color: #fff; 
+            border: 1px solid var(--green); 
+            padding: 3px 6px; 
+            font-size: 0.75rem; 
+            border-radius: 3px; 
+            font-weight: bold;
+            font-family: monospace;
+        }
 
-        .btn-main { padding: 15px; border-radius: 10px; border: none; background: #1a202c; color: white; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; }
+        .metrics-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+            padding: 8px 15px;
+            background: #030303;
+            border-bottom: 1px solid #222;
+            flex-shrink: 0;
+        }
+        .metric-card {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            padding: 6px 10px;
+            border-radius: 4px;
+        }
+        .metric-label { font-size: 0.6rem; color: var(--subtext); text-transform: uppercase; font-weight: bold; }
+        .metric-value { font-size: 0.88rem; font-weight: bold; color: #fff; margin-top: 2px; }
+        .metric-highlight { color: var(--green); }
+        .metric-accent { color: var(--accent); }
+        .metric-yellow { color: var(--yellow); }
+
+        .content-split { flex: 1; display: flex; width: 100%; height: 100%; overflow: hidden; }
         
-        .btn-reset-discreto { margin-top: 30px; text-align: center; }
-        .btn-reset-discreto button { background: none; border: none; color: #cbd5e0; font-size: 0.6em; cursor: pointer; text-decoration: none; }
+        .chart-section {
+            flex: 2;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            cursor: crosshair;
+            border-right: 1px solid #222;
+        }
+
+        .table-section {
+            flex: 1;
+            min-width: 320px;
+            max-width: 420px;
+            background: #040404;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .table-header-title {
+            padding: 10px 15px;
+            background: #080808;
+            border-bottom: 1px solid #222;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--green);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .table-wrapper { flex: 1; overflow-y: auto; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.72rem; text-align: left; }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: #0d0d0d;
+            color: var(--subtext);
+            padding: 8px 10px;
+            border-bottom: 1px solid #222;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+        }
+
+        td { padding: 7px 10px; border-bottom: 1px solid #111; font-family: monospace; }
+        tr:hover { background: #111111; }
+
+        .time-label { position: absolute; top: 8px; left: 15px; font-size: 0.75rem; font-weight: 900; color: var(--green); z-index: 11; }
+        
+        .hud-tag { 
+            position: absolute; 
+            top: 30px; 
+            left: 15px; 
+            pointer-events: none; 
+            background: rgba(0,0,0,0.92); 
+            border-left: 3px solid var(--green); 
+            padding: 8px 12px; 
+            border-radius: 4px; 
+            z-index: 10; 
+            border: 1px solid #222; 
+            min-width: 240px; 
+        }
+        .reset-btn { 
+            position: absolute; 
+            top: 8px; 
+            right: 15px; 
+            background: rgba(0, 255, 65, 0.1); 
+            border: 1px solid var(--green); 
+            color: var(--green); 
+            padding: 5px 12px; 
+            font-size: 0.75rem; 
+            cursor: pointer; 
+            z-index: 1000; 
+            border-radius: 3px; 
+            font-weight: bold; 
+        }
+        .reset-btn:hover { background: var(--green); color: #000; }
+
+        .val-atual { color: #fff; font-weight: 900; font-size: 1rem; }
+        .val-mult { font-weight: 900; font-size: 0.88rem; margin-top: 2px; color: var(--accent); }
+        .action-text { font-size: 0.8rem; font-weight: bold; margin-top: 3px; }
+        .info-text { font-size: 0.65rem; color: #777; margin-top: 3px; }
     </style>
 </head>
 <body>
 
-<div class="app-card">
-    <div class="user-selector">
-        <button id="btn-ana" class="user-btn ana" onclick="setUser('ana')">Ana Clara</button>
-        <button id="btn-alice" class="user-btn alice" onclick="setUser('alice')">Alice</button>
-    </div>
-
-    <div id="container-dias"></div>
-
-    <div class="painel-valores">
-        <div class="caixa c-poup">
-            <h4>🏦 CAIXINHA NUBANK 🔒</h4>
-            <span class="valor" id="v-poup">R$ 0,00</span>
+    <div class="toolbar">
+        <div style="line-height:1">
+            <div class="logo-title">SKYNET V58</div>
+            <div class="logo-sub">AUTO-SAVE SETTINGS ENGINE</div>
         </div>
-        <div class="caixa c-gasto">
-            <h4>🍦 GASTO SEMANAL</h4>
-            <span class="valor" id="v-gasto">R$ 0,00</span>
-            <button class="btn-acao" onclick="registrarGasto('gasto')">💸 REGISTRAR GASTO</button>
+
+        <div class="controls-group">
+            <div class="input-picker-box">
+                <label for="baseAporteInput">APORTE BASE (R$):</label>
+                <input type="number" id="baseAporteInput" value="100" min="1" step="10" style="width: 75px;" oninput="saveAndRefresh()">
+            </div>
+
+            <div class="input-picker-box">
+                <label for="startDate">INÍCIO APORTES:</label>
+                <input type="date" id="startDate" value="2026-01-01" onchange="saveAndRefresh()">
+            </div>
         </div>
-        <div class="caixa c-bonus">
-            <h4>🎒 BÔNUS (SONHOS)</h4>
-            <span class="valor" id="v-bonus">R$ 0,00</span>
-            <button class="btn-acao" onclick="registrarGasto('bonus')">🎁 USAR BÔNUS</button>
+
+        <div class="live-price" id="mainPrice">R$ ---.---</div>
+    </div>
+
+    <!-- Painel de Métricas -->
+    <div class="metrics-bar">
+        <div class="metric-card">
+            <div class="metric-label">Total Investido</div>
+            <div class="metric-value" id="mInvested">R$ ---</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">BTC Acumulado</div>
+            <div class="metric-value metric-accent" id="mBtc">--- BTC</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Patrimônio Atual</div>
+            <div class="metric-value metric-highlight" id="mPortfolio">R$ ---</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Valorização (%)</div>
+            <div class="metric-value" id="mRoiPct" style="font-size:1.05rem;">0.00%</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Lucro Sacável (R$)</div>
+            <div class="metric-value" id="mProfitBrl">R$ ---</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Lucro Sacável (BTC)</div>
+            <div class="metric-value metric-accent" id="mProfitBtc">--- BTC</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Margem LTV (50%)</div>
+            <div class="metric-value metric-yellow" id="mLtv50">R$ ---</div>
         </div>
     </div>
 
-    <div class="extrato">
-        <h5>📜 Histórico (Exclua para corrigir)</h5>
-        <div id="lista-extrato"></div>
+    <div class="content-split">
+        <div class="chart-section">
+            <div class="time-label">VISÃO GRÁFICA DE PONTOS DE APORTE</div>
+            <button class="reset-btn" onclick="resetScale()">RESET ESCALA</button>
+
+            <div class="hud-tag">
+                <div id="hudPrice" class="val-atual">PREÇO: R$ ---</div>
+                <div id="hudCandle" class="action-text">CANDLE: ---</div>
+                <div id="hudMult" class="val-mult">MULTIPLICADOR: 0.00x</div>
+                <div id="hudAction" class="action-text">RECOMENDAÇÃO: ---</div>
+                <div class="info-text">💡 Arraste para mover | Scroll para zoom</div>
+            </div>
+
+            <canvas id="chartEngine"></canvas>
+        </div>
+
+        <div class="table-section">
+            <div class="table-header-title">
+                <span>HISTÓRICO DE APORTES NO PERÍODO</span>
+                <span id="buyCount">0 APORTES</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Preço BTC</th>
+                            <th>Queda</th>
+                            <th>Mult.</th>
+                            <th>Aporte (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="5" style="text-align:center; color:#555;">Carregando dados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <button class="btn-main" onclick="concluirSemana()">CONCLUIR SEMANA</button>
+    <script>
+        let chartEngine = null;
+        let ws = null;
+        let rawKlinesData = [];
 
-    <div class="btn-reset-discreto">
-        <button onclick="resetAbsoluto()">Sincronizar e zerar banco de dados</button>
-    </div>
-</div>
+        // Carrega as últimas configurações salvas no navegador
+        function loadSavedSettings() {
+            const savedAporte = localStorage.getItem('skynet_aporte_base');
+            const savedDate = localStorage.getItem('skynet_start_date');
 
-<script>
-    // Recupera o último usuário ou inicia com Ana
-    let currentUser = localStorage.getItem('ultimoUsuario') || 'ana';
-    
-    // Banco de dados persistente
-    let dataStore = JSON.parse(localStorage.getItem('financas_irmas_final_v5')) || {
-        ana: { saldoAcumulado: 0, extrato: [], diasAtivos: {} },
-        alice: { saldoAcumulado: 0, extrato: [], diasAtivos: {} }
-    };
-
-    const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
-
-    function setUser(user) {
-        currentUser = user;
-        localStorage.setItem('ultimoUsuario', user);
-        document.getElementById('btn-ana').classList.toggle('active', user === 'ana');
-        document.getElementById('btn-alice').classList.toggle('active', user === 'alice');
-        render();
-    }
-
-    function render() {
-        const container = document.getElementById('container-dias');
-        container.innerHTML = '';
-        let state = dataStore[currentUser];
-        
-        diasSemana.forEach(nome => {
-            if(!state.diasAtivos[nome]) state.diasAtivos[nome] = {base: false, extra: false};
-            let row = document.createElement('div');
-            row.className = 'dia-row';
-            row.innerHTML = `
-                <button class="btn-dia ${state.diasAtivos[nome].base ? 'checked' : ''}" onclick="toggleDia('${nome}', 'base')">
-                    ${nome} <span>R$ 15</span>
-                </button>
-                <button class="btn-extra ${state.diasAtivos[nome].extra ? 'active' : ''}" onclick="toggleDia('${nome}', 'extra')">
-                    + R$ 15 EXTRA
-                </button>`;
-            container.appendChild(row);
-        });
-        atualizarCalculos();
-    }
-
-    function toggleDia(nome, tipo) {
-        dataStore[currentUser].diasAtivos[nome][tipo] = !dataStore[currentUser].diasAtivos[nome][tipo];
-        save(); atualizarCalculos(); render();
-    }
-
-    function registrarGasto(tipo) {
-        let vStr = prompt(`Quanto você gastou, ${currentUser === 'ana' ? 'Ana' : 'Alice'}?`);
-        if(vStr) {
-            let v = parseFloat(vStr.replace(',', '.'));
-            if(!isNaN(v)) {
-                dataStore[currentUser].extrato.unshift({
-                    id: Date.now(),
-                    tipo: tipo,
-                    valor: -v,
-                    desc: `${tipo.toUpperCase()}`,
-                    data: new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})
-                });
-                save(); atualizarCalculos();
+            if (savedAporte) {
+                document.getElementById('baseAporteInput').value = savedAporte;
+            }
+            if (savedDate) {
+                document.getElementById('startDate').value = savedDate;
             }
         }
-    }
 
-    function excluirItem(id) {
-        if(confirm("Deseja apagar este gasto e devolver o dinheiro ao saldo?")) {
-            dataStore[currentUser].extrato = dataStore[currentUser].extrato.filter(item => item.id !== id);
-            save(); atualizarCalculos();
-        }
-    }
+        // Salva as configurações localmente e reprocessa o motor
+        function saveAndRefresh() {
+            const aporteVal = document.getElementById('baseAporteInput').value;
+            const dateVal = document.getElementById('startDate').value;
 
-    function atualizarCalculos() {
-        let state = dataStore[currentUser];
-        let ganhoSemana = 0;
-        for(let dia in state.diasAtivos) {
-            if(state.diasAtivos[dia].base) ganhoSemana += 15;
-            if(state.diasAtivos[dia].extra) ganhoSemana += 15;
+            localStorage.setItem('skynet_aporte_base', aporteVal);
+            localStorage.setItem('skynet_start_date', dateVal);
+
+            refreshEngine();
         }
 
-        let totalPoup = (state.saldoAcumulado + ganhoSemana) / 3;
-        let resto = (state.saldoAcumulado + ganhoSemana) - totalPoup;
-        
-        let totalGasto = resto * 0.75;
-        let totalBonus = resto * 0.25;
-
-        state.extrato.forEach(item => {
-            if(item.tipo === 'gasto') totalGasto += item.valor;
-            if(item.tipo === 'bonus') totalBonus += item.valor;
-        });
-
-        document.getElementById('v-poup').innerText = format(totalPoup);
-        document.getElementById('v-gasto').innerText = format(totalGasto);
-        document.getElementById('v-bonus').innerText = format(totalBonus);
-
-        renderExtrato();
-    }
-
-    function renderExtrato() {
-        const lista = document.getElementById('lista-extrato');
-        lista.innerHTML = dataStore[currentUser].extrato.length === 0 ? '<div style="color:#ccc; font-size:0.7em">Nenhum gasto para mostrar.</div>' : '';
-        dataStore[currentUser].extrato.forEach(item => {
-            lista.innerHTML += `
-                <div class="item-extrato">
-                    <span><span style="color:#94a3b8">${item.data}</span> ${item.desc}</span>
-                    <span style="color:#ef4444">${format(item.valor)} <button class="btn-del" onclick="excluirItem(${item.id})">✕</button></span>
-                </div>`;
-        });
-    }
-
-    function concluirSemana() {
-        let state = dataStore[currentUser];
-        let ganho = 0;
-        for(let dia in state.diasAtivos) {
-            if(state.diasAtivos[dia].base) ganho += 15;
-            if(state.diasAtivos[dia].extra) ganho += 15;
+        function resetScale() {
+            if(!chartEngine) return;
+            chartEngine.options.scales.x.min = undefined; 
+            chartEngine.options.scales.x.max = undefined;
+            chartEngine.options.scales.y.min = undefined; 
+            chartEngine.options.scales.y.max = undefined;
+            chartEngine.update('none');
         }
-        if(confirm(`Somar R$ ${ganho} ao saldo acumulado e limpar calendário?`)) {
-            state.saldoAcumulado += ganho;
-            state.diasAtivos = {};
-            save(); render();
-        }
-    }
 
-    function format(v) { return `R$ ${v.toFixed(2).replace('.', ',')}`; }
-    function save() { localStorage.setItem('financas_irmas_final_v5', JSON.stringify(dataStore)); }
-    
-    function resetAbsoluto() {
-        if(confirm("ATENÇÃO: Isso apagará TODOS os saldos da Ana e da Alice. Tem certeza absoluta?")) {
-            localStorage.clear();
-            location.reload();
+        function calculateSMA(data, period) {
+            let sma = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) {
+                    sma.push(null);
+                } else {
+                    let sum = 0;
+                    for (let j = 0; j < period; j++) {
+                        sum += data[i - j];
+                    }
+                    sma.push(sum / period);
+                }
+            }
+            return sma;
         }
-    }
-    
-    // Inicia no usuário correto
-    setUser(currentUser);
-</script>
+
+        function initChart() {
+            const canvas = document.getElementById('chartEngine');
+            const ds = [
+                {
+                    label: 'Aportes (Candles Vermelhos)',
+                    data: [],
+                    borderColor: 'transparent',
+                    backgroundColor: '#00ff41',
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    showLine: false,
+                    order: 1
+                },
+                {
+                    label: 'Preço BTC (BRL)',
+                    data: [],
+                    borderColor: '#ffffff',
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    order: 2
+                },
+                {
+                    label: 'SMA 200 Dias',
+                    data: [],
+                    borderColor: '#00ffff',
+                    borderWidth: 1.2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    order: 3
+                },
+                {
+                    label: 'SMA 34 Semanal',
+                    data: [],
+                    borderColor: '#f59e0b',
+                    borderWidth: 1.2,
+                    borderDash: [2, 2],
+                    pointRadius: 0,
+                    order: 4
+                }
+            ];
+
+            chartEngine = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: { datasets: ds },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    interaction: { mode: 'nearest', intersect: false, axis: 'x' },
+                    scales: { 
+                        x: { type: 'time', grid: { display: false }, ticks: { color: '#555' } }, 
+                        y: { position: 'right', grid: { color: '#111' }, ticks: { color: '#888' } } 
+                    },
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { 
+                            enabled: true, 
+                            backgroundColor: 'rgba(0,0,0,0.95)', 
+                            titleColor: '#00ff41', 
+                            callbacks: { 
+                                label: (ctx) => `${ctx.dataset.label}: R$ ${ctx.parsed.y.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`
+                            } 
+                        } 
+                    }
+                }
+            });
+
+            let state = { drag: false, lx: 0, ly: 0 };
+            
+            const move = (ex, ey) => {
+                if(!state.drag) return;
+                const s = chartEngine.scales;
+                const dx = ((ex - state.lx) / s.x.width) * (s.x.max - s.x.min);
+                const dy = ((ey - state.ly) / s.y.height) * (s.y.max - s.y.min);
+                
+                chartEngine.options.scales.x.min = (chartEngine.options.scales.x.min || s.x.min) - dx;
+                chartEngine.options.scales.x.max = (chartEngine.options.scales.x.max || s.x.max) - dx;
+                chartEngine.options.scales.y.min = (chartEngine.options.scales.y.min || s.y.min) + dy;
+                chartEngine.options.scales.y.max = (chartEngine.options.scales.y.max || s.y.max) + dy;
+                
+                state.lx = ex; 
+                state.ly = ey;
+                chartEngine.update('none');
+            };
+
+            canvas.addEventListener('mousedown', e => { state.drag = true; state.lx = e.clientX; state.ly = e.clientY; });
+            window.addEventListener('mouseup', () => state.drag = false);
+            canvas.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+            
+            canvas.addEventListener('wheel', e => {
+                e.preventDefault();
+                const s = chartEngine.scales, f = e.deltaY > 0 ? 1.1 : 0.9;
+                const xr = (s.x.max - s.x.min) * f, yr = (s.y.max - s.y.min) * f;
+                const xm = (s.x.max + s.x.min)/2, ym = (s.y.max + s.y.min)/2;
+                
+                chartEngine.options.scales.x.min = xm - xr/2; 
+                chartEngine.options.scales.x.max = xm + xr/2;
+                chartEngine.options.scales.y.min = ym - yr/2; 
+                chartEngine.options.scales.y.max = ym + yr/2;
+                
+                chartEngine.update('none');
+            }, {passive: false});
+        }
+
+        async function loadHistoricalData() {
+            try {
+                const res = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCBRL&interval=1d&limit=1000');
+                const data = await res.json();
+                
+                rawKlinesData = data.map(d => ({
+                    time: d[0],
+                    open: parseFloat(d[1]),
+                    close: parseFloat(d[4])
+                }));
+
+                refreshEngine();
+                connectWebSocket();
+            } catch(e) {
+                console.error("Erro klines:", e);
+            }
+        }
+
+        function connectWebSocket() {
+            if(ws) ws.close();
+            ws = new WebSocket('wss://stream.binance.com:9443/ws/btcbrl@kline_1d');
+            
+            ws.onmessage = (e) => {
+                const k = JSON.parse(e.data).k;
+                const currentPrice = parseFloat(k.c);
+                const currentOpen = parseFloat(k.o);
+
+                if(rawKlinesData.length > 0) {
+                    const lastIdx = rawKlinesData.length - 1;
+                    rawKlinesData[lastIdx].close = currentPrice;
+                    rawKlinesData[lastIdx].open = currentOpen;
+                }
+
+                refreshEngine();
+            };
+        }
+
+        function refreshEngine() {
+            if(!rawKlinesData.length || !chartEngine) return;
+
+            const baseAporteVal = parseFloat(document.getElementById('baseAporteInput').value) || 100.0;
+            const startDateVal = document.getElementById('startDate').value;
+            const startTimeStamp = new Date(startDateVal + 'T00:00:00').getTime();
+
+            let priceSeries = [];
+            let buySeries = [];
+            let pricesArr = [];
+
+            let totalSpent = 0;
+            let totalBtc = 0;
+            let buyTableRows = [];
+
+            rawKlinesData.forEach(d => pricesArr.push(d.close));
+            const sma200 = calculateSMA(pricesArr, 200);
+            const sma34w = calculateSMA(pricesArr, 238);
+
+            rawKlinesData.forEach((d, i) => {
+                priceSeries.push({ x: d.time, y: d.close });
+
+                const isNeg = d.close < d.open;
+                const changePct = ((d.close - d.open) / d.open) * 100;
+
+                if (d.time >= startTimeStamp && isNeg) {
+                    let ampMult = (changePct <= -3.0) ? 2.0 : (changePct <= -1.5 ? 1.4 : 1.0);
+                    
+                    let trendMult = 1.0;
+                    const s200 = sma200[i];
+                    const s34w = sma34w[i];
+                    
+                    if (s200 !== null && s34w !== null) {
+                        if (d.close < s200 && d.close < s34w) trendMult = 1.8;
+                        else if (d.close < s200 || d.close < s34w) trendMult = 1.3;
+                    }
+
+                    const mult = ampMult * trendMult;
+                    const aporte = baseAporteVal * mult;
+                    
+                    totalSpent += aporte;
+                    totalBtc += aporte / d.close;
+
+                    buySeries.push({ x: d.time, y: d.close });
+
+                    const dateFormatted = new Date(d.time).toLocaleDateString('pt-BR');
+                    buyTableRows.unshift(`
+                        <tr>
+                            <td>${dateFormatted}</td>
+                            <td>R$ ${d.close.toLocaleString('pt-BR', {minimumFractionDigits: 0})}</td>
+                            <td style="color:#ff3333;">${changePct.toFixed(2)}%</td>
+                            <td style="color:#00ffff;">${mult.toFixed(2)}x</td>
+                            <td style="color:#00ff41; font-weight:bold;">R$ ${aporte.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                    `);
+                }
+            });
+
+            document.getElementById('tableBody').innerHTML = buyTableRows.length > 0 ? buyTableRows.join('') : '<tr><td colspan="5" style="text-align:center; color:#555;">Nenhum aporte no período selecionado.</td></tr>';
+            document.getElementById('buyCount').innerText = `${buySeries.length} APORTES`;
+
+            let sma200Series = [];
+            let sma34wSeries = [];
+
+            for(let i=0; i<rawKlinesData.length; i++) {
+                if(sma200[i] !== null) sma200Series.push({ x: rawKlinesData[i].time, y: sma200[i] });
+                if(sma34w[i] !== null) sma34wSeries.push({ x: rawKlinesData[i].time, y: sma34w[i] });
+            }
+
+            const lastK = rawKlinesData[rawKlinesData.length - 1];
+            const currentPrice = lastK.close;
+            const currentOpen = lastK.open;
+            const changePct = ((currentPrice - currentOpen) / currentOpen) * 100;
+            const isNegative = currentPrice < currentOpen;
+
+            const currSMA200 = sma200[sma200.length - 1] || 0;
+            const currSMA34W = sma34w[sma34w.length - 1] || 0;
+
+            let ampMult = 0.0;
+            let trendMult = 0.0;
+
+            if (isNegative) {
+                if (changePct > -1.5) ampMult = 1.0;
+                else if (changePct > -3.0) ampMult = 1.4;
+                else ampMult = 2.0;
+
+                if (currentPrice < currSMA200 && currentPrice < currSMA34W) trendMult = 1.8;
+                else if (currentPrice < currSMA200 || currentPrice < currSMA34W) trendMult = 1.3;
+                else trendMult = 1.0;
+            }
+
+            const totalMult = ampMult * trendMult;
+            const aporteFinal = baseAporteVal * totalMult;
+
+            const portfolioValue = totalBtc * currentPrice;
+            const profitBrl = Math.max(0, portfolioValue - totalSpent);
+            const profitBtc = currentPrice > 0 ? (profitBrl / currentPrice) : 0;
+            const roiPct = totalSpent > 0 ? ((portfolioValue - totalSpent) / totalSpent) * 100 : 0;
+            const ltv50Brl = portfolioValue * 0.50;
+
+            document.getElementById('mInvested').innerText = `R$ ${totalSpent.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('mBtc').innerText = `${totalBtc.toFixed(6)} BTC`;
+            document.getElementById('mPortfolio').innerText = `R$ ${portfolioValue.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            const roiEl = document.getElementById('mRoiPct');
+            roiEl.innerText = `${roiPct >= 0 ? '+' : ''}${roiPct.toFixed(2)}%`;
+            roiEl.style.color = roiPct >= 0 ? '#00ff41' : '#ff3333';
+
+            const profitBrlEl = document.getElementById('mProfitBrl');
+            profitBrlEl.innerText = `R$ ${profitBrl.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            profitBrlEl.style.color = profitBrl > 0 ? '#00ff41' : '#ffffff';
+
+            const profitBtcEl = document.getElementById('mProfitBtc');
+            profitBtcEl.innerText = `${profitBtc.toFixed(6)} BTC`;
+
+            document.getElementById('mLtv50').innerText = `R$ ${ltv50Brl.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            document.getElementById('mainPrice').innerText = `R$ ${currentPrice.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('hudPrice').innerText = `PREÇO: R$ ${currentPrice.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            
+            const candleEl = document.getElementById('hudCandle');
+            candleEl.innerText = `CANDLE: ${isNegative ? '🔴 VERMELHO' : '🟢 VERDE'} (${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%)`;
+            candleEl.style.color = isNegative ? '#ff3333' : '#00ff41';
+
+            document.getElementById('hudMult').innerText = `MULTIPLICADOR: ${totalMult.toFixed(2)}x`;
+
+            const actionEl = document.getElementById('hudAction');
+            if(!isNegative) {
+                actionEl.innerText = `RECOMENDAÇÃO: AGUARDAR (R$ 0,00)`;
+                actionEl.style.color = '#ffffff';
+            } else {
+                actionEl.innerText = `RECOMENDAÇÃO: APORTAR R$ ${aporteFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                actionEl.style.color = '#00ff41';
+            }
+
+            chartEngine.data.datasets[0].data = buySeries;
+            chartEngine.data.datasets[1].data = priceSeries;
+            chartEngine.data.datasets[2].data = sma200Series;
+            chartEngine.data.datasets[3].data = sma34wSeries;
+
+            chartEngine.update('none');
+        }
+
+        window.onload = () => {
+            loadSavedSettings();
+            initChart();
+            loadHistoricalData();
+        };
+    </script>
 </body>
 </html>
